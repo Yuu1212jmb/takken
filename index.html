@@ -235,10 +235,18 @@ function makeDefault() {
 
 function load() {
   const s = localStorage.getItem(KEY);
-  if (s) return JSON.parse(s);
-  const d = makeDefault();
-  save(d);
-  return d;
+  const existing = s ? JSON.parse(s) : [];
+  const existingIds = new Set(existing.map(v => getVid(v.url)).filter(Boolean));
+  let added = false;
+  DEFAULT_URLS.forEach((url, i) => {
+    const vid = getVid(url);
+    if (vid && !existingIds.has(vid)) {
+      existing.push({ id: 'default_' + i + '_' + vid, url, title: '読み込み中…', category: '未分類', views: 0 });
+      added = true;
+    }
+  });
+  if (added || !s) save(existing);
+  return existing;
 }
 function save(v) { localStorage.setItem(KEY, JSON.stringify(v)); }
 
