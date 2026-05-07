@@ -315,9 +315,28 @@ async function fetchTitle(url) {
   } catch { return null; }
 }
 
+function parseDuration(iso) {
+  const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!m) return null;
+  const h = parseInt(m[1]||0), min = parseInt(m[2]||0), s = parseInt(m[3]||0);
+  if (h > 0) return `${h}:${String(min).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  return `${min}:${String(s).padStart(2,'0')}`;
+}
+
+async function fetchDuration(vid) {
+  try {
+    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent('https://www.youtube.com/watch?v=' + vid)}`;
+    const res = await fetch(proxy);
+    const data = await res.json();
+    const match = data.contents.match(/"duration":"(PT[^"]+)"/);
+    if (match) return parseDuration(match[1]);
+    return null;
+  } catch { return null; }
+}
+
 async function fetchAllTitles() {
   const videos = load();
-  const targets = videos.filter(v => v.title.startsWith('読み込み中') || v.title.startsWith('動画 ('));
+  const targets = videos.filter(v => v.title.startsWith('読み込み中') || v.title.startsWith('動画 (') || !v.duration);
   if (!targets.length) { showToast('取得するタイトルがありません'); return; }
 
   const bar = document.getElementById('progress-bar');
@@ -328,25 +347,25 @@ async function fetchAllTitles() {
 
   for (const v of targets) {
     const title = await fetchTitle(v.url);
-    if (title) {
-      const all = load();
-      const item = all.find(x => x.id === v.id);
-      if (item) {
-        item.title = title;
-        item.category = guessCategory(title);
-        save(all);
-      }
+    const vid = getVid(v.url);
+    const duration = vid ? await fetchDuration(vid) : null;
+    const all = load();
+    const item = all.find(x => x.id === v.id);
+    if (item) {
+      if (title) { item.title = title; item.category = guessCategory(title); }
+      if (duration) item.duration = duration;
+      save(all);
     }
     done++;
     fill.style.width = (done / targets.length * 100) + '%';
-    result.textContent = `タイトル・分野取得中… ${done}/${targets.length}`;
+    result.textContent = `取得中… ${done}/${targets.length}`;
     render();
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise(r => setTimeout(r, 500));
   }
 
   bar.style.display = 'none';
-  result.textContent = `✅ タイトル・分野の自動分類が完了！`;
-  showToast('タイトル取得＆分野分類完了！');
+  result.textContent = `✅ タイトル・再生時間の取得完了！`;
+  showToast('タイトル・再生時間取得完了！');
   render();
 }
 
@@ -416,6 +435,7 @@ function render() {
           </div>
           <div class="card-title">${v.title}</div>
           <div class="card-meta">
+            ${v.duration ? `<span style="font-size:12px;color:#888;">⏱ ${v.duration}</span>` : ''}
             <button class="btn-watch" onclick="event.stopPropagation();watchVideo('${v.id}','${v.url}')">▶ 視聴する</button>
           </div>
         </div>
