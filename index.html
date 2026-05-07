@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>宅建学習動画管理</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f5f7fa; color: #333; }
+  header { background: linear-gradient(135deg, #1a73e8, #0d47a1); color: white; padding: 20px 24px; display: flex; align-items: center; gap: 12px; }
+  header h1 { font-size: 20px; font-weight: 700; }
+  header .date { font-size: 13px; opacity: 0.8; margin-left: auto; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+
+  .stats { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .stat-card { background: white; border-radius: 10px; padding: 12px 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); flex: 1; min-width: 100px; text-align: center; }
+  .stat-num { font-size: 26px; font-weight: 700; color: #1a73e8; }
+  .stat-label { font-size: 11px; color: #888; margin-top: 2px; }
+
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .tab { padding: 8px 16px; border-radius: 20px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; background: white; color: #555; box-shadow: 0 1px 4px rgba(0,0,0,0.08); transition: all 0.2s; }
+  .tab:hover { background: #e8f0fe; color: #1a73e8; }
+  .tab.active { background: #1a73e8; color: white; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+  .card { background: white; border-radius: 12px; padding: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); transition: transform 0.2s; }
+  .card:hover { transform: translateY(-2px); }
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .card-category { font-size: 11px; font-weight: 700; color: white; border-radius: 4px; padding: 2px 8px; display: inline-block; }
+  .card-num { font-size: 11px; color: #aaa; }
+  .card-title { font-size: 13px; font-weight: 600; line-height: 1.5; margin-bottom: 12px; color: #222; }
+  .card-meta { display: flex; align-items: center; justify-content: space-between; }
+  .btn-watch { background: #ff0000; color: white; border: none; padding: 7px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-watch:hover { background: #cc0000; }
+
+  .panel { background: white; border-radius: 12px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); margin-bottom: 20px; }
+  .panel-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
+  .panel-title { font-size: 15px; font-weight: 700; color: #333; }
+  .panel-body { margin-top: 16px; }
+  .hidden { display: none; }
+
+  .bulk-area { width: 100%; height: 140px; border: 1px solid #ddd; border-radius: 8px; padding: 10px; font-size: 13px; resize: vertical; outline: none; font-family: monospace; }
+  .bulk-area:focus { border-color: #1a73e8; }
+  .bulk-hint { font-size: 12px; color: #888; margin-bottom: 8px; line-height: 1.6; }
+  .btn-blue { background: #1a73e8; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn-blue:hover { background: #1558c0; }
+  .progress-bar { height: 6px; background: #e0e0e0; border-radius: 3px; margin-top: 10px; overflow: hidden; display: none; }
+  .progress-fill { height: 100%; background: #1a73e8; border-radius: 3px; transition: width 0.3s; width: 0%; }
+
+  .form-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .form-row input, .form-row select { flex: 1; min-width: 160px; padding: 9px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none; }
+  .form-row input:focus, .form-row select:focus { border-color: #1a73e8; }
+
+  .btn-primary { background: #1a73e8; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn-primary:hover { background: #1558c0; }
+  .btn-green { background: #43a047; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn-green:hover { background: #2e7d32; }
+
+  .empty { text-align: center; padding: 48px; color: #bbb; font-size: 14px; }
+  .cat-宅建業法 { background: #1a73e8; }
+  .cat-民法 { background: #e53935; }
+  .cat-法令上の制限 { background: #43a047; }
+  .cat-税・その他 { background: #fb8c00; }
+  .cat-免除科目 { background: #8e24aa; }
+  .cat-未分類 { background: #9e9e9e; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 8px; font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <span style="font-size:24px">📺</span>
+  <h1>宅建学習動画管理</h1>
+  <span class="date" id="header-date"></span>
+</header>
+
+<div class="container">
+
+  <div class="stats">
+    <div class="stat-card"><div class="stat-num" id="stat-total">0</div><div class="stat-label">登録動画</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-watched">0</div><div class="stat-label">視聴済み</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-views">0</div><div class="stat-label">総視聴回数</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-progress">0%</div><div class="stat-label">視聴率</div></div>
+  </div>
+
+  <!-- 一括インポート -->
+  <div class="panel">
+    <div class="panel-header" onclick="togglePanel('bulk')">
+      <span class="panel-title">📋 URLを一括インポート（74本まとめてOK）</span>
+      <span id="bulk-arrow">▼</span>
+    </div>
+    <div class="panel-body" id="bulk-body">
+      <p class="bulk-hint">
+        ① YouTubeのURLを1行1本で貼り付ける（74本まとめてOK）<br>
+        ② 「一括登録」を押すと自動で分野を判定して登録<br>
+        ③ タイトルは登録後に動画を開いて確認しながら修正できます
+      </p>
+      <textarea class="bulk-area" id="bulk-input" placeholder="https://www.youtube.com/watch?v=xxxxx&#10;https://www.youtube.com/watch?v=yyyyy&#10;https://youtu.be/zzzzz&#10;（ここに全部貼り付けてください）"></textarea>
+      <div style="margin-top:10px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+        <button class="btn-green" onclick="bulkImport()">一括登録する</button>
+        <button class="btn-blue" onclick="fetchAllTitles()">📡 タイトルを自動取得</button>
+        <button class="btn-primary" onclick="recategorizeAll()" style="background:#fb8c00">🔄 分野を再分類</button>
+        <span id="bulk-result" style="font-size:13px; color:#43a047;"></span>
+      </div>
+      <div class="progress-bar" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+  </div>
+
+  <!-- 個別追加 -->
+  <div class="panel">
+    <div class="panel-header" onclick="togglePanel('single')">
+      <span class="panel-title">➕ 1本ずつ追加（タイトルも入力）</span>
+      <span id="single-arrow">▼</span>
+    </div>
+    <div class="panel-body hidden" id="single-body">
+      <div class="form-row">
+        <input type="text" id="inp-url" placeholder="YouTube URL">
+        <input type="text" id="inp-title" placeholder="タイトル">
+      </div>
+      <div class="form-row">
+        <select id="inp-cat">
+          <option value="宅建業法">宅建業法</option>
+          <option value="民法">民法（権利関係）</option>
+          <option value="法令上の制限">法令上の制限</option>
+          <option value="税・その他">税・その他</option>
+          <option value="免除科目">免除科目</option>
+          <option value="未分類">未分類</option>
+        </select>
+        <button class="btn-primary" onclick="addSingle()">登録する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- タブ -->
+  <div class="tabs">
+    <button class="tab active" onclick="filterTab('all',this)">すべて</button>
+    <button class="tab" onclick="filterTab('宅建業法',this)">🏢 宅建業法</button>
+    <button class="tab" onclick="filterTab('民法',this)">⚖️ 民法</button>
+    <button class="tab" onclick="filterTab('法令上の制限',this)">🏗️ 法令制限</button>
+    <button class="tab" onclick="filterTab('税・その他',this)">💴 税・その他</button>
+    <button class="tab" onclick="filterTab('免除科目',this)">📋 免除科目</button>
+    <button class="tab" onclick="filterTab('未分類',this)">📁 未分類</button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <div class="empty hidden" id="empty">動画がありません。上から追加してください。</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY = 'takken_videos_v2';
+let currentFilter = 'all';
+
+function load() { const s = localStorage.getItem(KEY); return s ? JSON.parse(s) : []; }
+function save(v) { localStorage.setItem(KEY, JSON.stringify(v)); }
+
+function guessCategory(text) {
+  const t = text;
+  if (/宅建業法|業法|免許|報酬|媒介|37条|35条|重要事項|宅地建物取引|取引士|営業保証|弁済業務/.test(t)) return '宅建業法';
+  if (/民法|物権|債権|相続|代理|時効|抵当権|賃貸借|賃借|錯誤|保証|売買|契約|不法行為|共有|地上権|地役権|留置権|先取特権|質権|根抵当|担保|意思表示|制限行為/.test(t)) return '民法';
+  if (/建築基準法|都市計画法|用途地域|農地法|国土利用|区画整理|宅地造成|盛土|土地区画|開発許可|防火|容積率|建蔽率|斜線|高さ制限|道路|用途/.test(t)) return '法令上の制限';
+  if (/税|所得税|贈与税|固定資産税|印紙税|登録免許税|不動産取得税|地価公示|不動産鑑定|譲渡/.test(t)) return '税・その他';
+  if (/免除科目|統計|住宅金融支援機構|景品表示法|公正競争規約|土地|建物の/.test(t)) return '免除科目';
+  return '未分類';
+}
+
+function getVid(url) {
+  const m = url.match(/(?:youtu\.be\/|watch\?v=|embed\/)([^?&\s]+)/);
+  return m ? m[1] : null;
+}
+
+function togglePanel(id) {
+  const b = document.getElementById(id + '-body');
+  const a = document.getElementById(id + '-arrow');
+  b.classList.toggle('hidden');
+  a.textContent = b.classList.contains('hidden') ? '▼' : '▲';
+}
+
+function bulkImport() {
+  const text = document.getElementById('bulk-input').value.trim();
+  if (!text) return;
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.match(/^https?:\/\//));
+  if (!lines.length) { showToast('有効なURLが見つかりません'); return; }
+
+  const videos = load();
+  const existing = new Set(videos.map(v => v.url));
+  let added = 0, skipped = 0;
+
+  lines.forEach(url => {
+    const cleanUrl = url.split('?')[0] + (url.includes('?v=') ? '?v=' + url.split('?v=')[1].split('&')[0] : '');
+    const baseUrl = getVid(url) ? `https://www.youtube.com/watch?v=${getVid(url)}` : url;
+    if ([...existing].some(e => getVid(e) === getVid(url) && getVid(url))) { skipped++; return; }
+    if (existing.has(url)) { skipped++; return; }
+    const vid = getVid(url);
+    const title = vid ? `読み込み中… (${vid.slice(0,8)})` : 'タイトル未設定';
+    videos.push({ id: Date.now() + '' + Math.random().toString(36).slice(2), url, title, category: '未分類', views: 0 });
+    existing.add(url);
+    added++;
+  });
+
+  save(videos);
+  document.getElementById('bulk-input').value = '';
+  document.getElementById('bulk-result').textContent = `✅ ${added}本登録（重複${skipped}本スキップ）タイトル取得中…`;
+  showToast(`${added}本登録！タイトルを自動取得します`);
+  render();
+  fetchAllTitles();
+}
+
+async function fetchTitle(url) {
+  try {
+    const res = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.title || null;
+  } catch { return null; }
+}
+
+async function fetchAllTitles() {
+  const videos = load();
+  const targets = videos.filter(v => v.title.startsWith('読み込み中') || v.title.startsWith('動画 ('));
+  if (!targets.length) { showToast('取得するタイトルがありません'); return; }
+
+  const bar = document.getElementById('progress-bar');
+  const fill = document.getElementById('progress-fill');
+  const result = document.getElementById('bulk-result');
+  bar.style.display = 'block';
+  let done = 0;
+
+  for (const v of targets) {
+    const title = await fetchTitle(v.url);
+    if (title) {
+      const all = load();
+      const item = all.find(x => x.id === v.id);
+      if (item) {
+        item.title = title;
+        item.category = guessCategory(title);
+        save(all);
+      }
+    }
+    done++;
+    fill.style.width = (done / targets.length * 100) + '%';
+    result.textContent = `タイトル・分野取得中… ${done}/${targets.length}`;
+    render();
+    await new Promise(r => setTimeout(r, 300));
+  }
+
+  bar.style.display = 'none';
+  result.textContent = `✅ タイトル・分野の自動分類が完了！`;
+  showToast('タイトル取得＆分野分類完了！');
+  render();
+}
+
+async function recategorizeAll() {
+  const all = load();
+  all.forEach(v => { v.category = guessCategory(v.title); });
+  save(all);
+  render();
+  showToast('分野を再分類しました！');
+}
+
+function addSingle() {
+  const url = document.getElementById('inp-url').value.trim();
+  const title = document.getElementById('inp-title').value.trim();
+  const cat = document.getElementById('inp-cat').value;
+  if (!url || !title) { showToast('URLとタイトルを入力してください'); return; }
+  const v = load();
+  v.push({ id: Date.now().toString(), url, title, category: cat, views: 0 });
+  save(v); render();
+  document.getElementById('inp-url').value = '';
+  document.getElementById('inp-title').value = '';
+  showToast('登録しました');
+}
+
+function watchVideo(id, url) {
+  const v = load();
+  const item = v.find(x => x.id === id);
+  if (item) { item.views = (item.views || 0) + 1; save(v); render(); }
+  window.open(url, '_blank');
+}
+
+function filterTab(cat, el) {
+  currentFilter = cat;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function render() {
+  const all = load();
+  const filtered = currentFilter === 'all' ? all : all.filter(v => v.category === currentFilter);
+  const grid = document.getElementById('grid');
+  const empty = document.getElementById('empty');
+
+  if (!filtered.length) {
+    grid.innerHTML = '';
+    empty.classList.remove('hidden');
+  } else {
+    empty.classList.add('hidden');
+    grid.innerHTML = filtered.map(v => `
+      <div class="card">
+        <div class="card-top">
+          <span class="card-category cat-${v.category}">${v.category}</span>
+          <span class="card-num">${v.views > 0 ? '👁 ' + v.views + '回' : '未視聴'}</span>
+        </div>
+        <div class="card-title">${v.title}</div>
+        <div class="card-meta">
+          <span style="font-size:11px;color:#ccc;">${(v.url||'').slice(0,28)}…</span>
+          <button class="btn-watch" onclick="watchVideo('${v.id}','${v.url}')">▶ 視聴</button>
+        </div>
+      </div>`).join('');
+  }
+
+  const watched = all.filter(v => v.views > 0).length;
+  const totalV = all.reduce((s, v) => s + (v.views || 0), 0);
+  document.getElementById('stat-total').textContent = all.length;
+  document.getElementById('stat-watched').textContent = watched;
+  document.getElementById('stat-views').textContent = totalV;
+  document.getElementById('stat-progress').textContent = all.length ? Math.round(watched / all.length * 100) + '%' : '0%';
+}
+
+document.getElementById('header-date').textContent = new Date().toLocaleDateString('ja-JP');
+render();
+</script>
+</body>
+</html>
