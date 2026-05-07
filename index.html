@@ -154,7 +154,87 @@
 const KEY = 'takken_videos_v2';
 let currentFilter = 'all';
 
-function load() { const s = localStorage.getItem(KEY); return s ? JSON.parse(s) : []; }
+const DEFAULT_URLS = [
+  'https://www.youtube.com/watch?v=v_gxvoE55n4',
+  'https://www.youtube.com/watch?v=xImP07cs-0M',
+  'https://youtu.be/Fnss7dHQRU4',
+  'https://youtu.be/JbTiUf1m_Bk',
+  'https://youtu.be/68yBAjkg2OI',
+  'https://youtu.be/t--F4LTCN3Y',
+  'https://youtu.be/0PC7QEBIVcU',
+  'https://youtu.be/ocWhDa15-yI',
+  'https://youtu.be/o2s_7lNa_jY',
+  'https://youtu.be/d5_XB0j24Ag',
+  'https://youtu.be/HvpM_72f97w',
+  'https://youtu.be/S2csktm-13c',
+  'https://youtu.be/m6DjRHcbNbg',
+  'https://youtu.be/9V037oWws8s',
+  'https://youtu.be/e6AV9BcdkeI',
+  'https://youtu.be/jKXgZQonu-8',
+  'https://youtu.be/cjthZlgOWwM',
+  'https://youtu.be/Dgr5roen25s',
+  'https://youtu.be/yzZvD99PuYE',
+  'https://youtu.be/qmFZcRdISMc',
+  'https://youtu.be/bX13UrS6xqM',
+  'https://youtu.be/gzqNsLuPYis',
+  'https://youtu.be/pL9RHnxVt2M',
+  'https://youtu.be/EsFiDuFDSIU',
+  'https://youtu.be/vzRf-THSLBM',
+  'https://youtu.be/mYfsjbbfJMU',
+  'https://youtu.be/DHdSOn3lvRQ',
+  'https://youtu.be/QKhns-vq1uM',
+  'https://youtu.be/22CF6Wz6D6E',
+  'https://youtu.be/C2GD4uieTz4',
+  'https://youtu.be/D5ibUbdVXyw',
+  'https://youtu.be/wWOunMCQVWk',
+  'https://youtu.be/4YGR2eF7kZc',
+  'https://youtu.be/XpQujEt6F0c',
+  'https://youtu.be/0IezEvC1CM0',
+  'https://youtu.be/KtMbo0HBpEY',
+  'https://youtu.be/F498PLa6UzY',
+  'https://youtu.be/iFUHsnnTnng',
+  'https://youtu.be/QzcwbOZs6VE',
+  'https://youtu.be/zA_aLux2qoY',
+  'https://youtu.be/rArSez1pYxE',
+  'https://youtu.be/QG-_7JEKO8U',
+  'https://youtu.be/lXgjlpjks1w',
+  'https://youtu.be/DFfTgKLc1Q8',
+  'https://youtu.be/h068VCduPBU',
+  'https://youtu.be/Ctjq9DrHXf8',
+  'https://youtu.be/uVa3MNrKgiQ',
+  'https://youtu.be/E9F5qLvNTr4',
+  'https://youtu.be/6QcCJywZDYc',
+  'https://youtu.be/LlkttBurUws',
+  'https://youtu.be/ywuweR2-uMo',
+  'https://youtu.be/Cp4bAnvNd8g',
+  'https://youtu.be/rNaG-dw3edo',
+  'https://youtu.be/afrdrqXQnx4',
+  'https://youtu.be/nffgz8N2eS4',
+  'https://youtu.be/eGjTwGvuTMI',
+  'https://youtu.be/FCnfgJK_CEc',
+  'https://youtu.be/8NSNIBMImHU',
+  'https://youtu.be/YXO1xQIuabE',
+  'https://youtu.be/NCm5VXyF6v8',
+  'https://youtu.be/vRWLWZJ4Xxo',
+];
+
+function makeDefault() {
+  return DEFAULT_URLS.map((url, i) => ({
+    id: 'default_' + i,
+    url,
+    title: '読み込み中…',
+    category: '未分類',
+    views: 0
+  }));
+}
+
+function load() {
+  const s = localStorage.getItem(KEY);
+  if (s) return JSON.parse(s);
+  const d = makeDefault();
+  save(d);
+  return d;
+}
 function save(v) { localStorage.setItem(KEY, JSON.stringify(v)); }
 
 function guessCategory(text) {
